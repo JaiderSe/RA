@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="WebAR - Experiencia de Realidad Aumentada con A-Frame">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>WebAR - Realidad Aumentada</title>
+    
+    <!-- A-Frame 1.4.0 -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
+    <!-- AR.js for A-Frame -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    
+    <style>
+        /* ============================================
+           ESTILOS PRINCIPALES - Mobile First Design
+           ============================================ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-color: #4a90d9;
+            --secondary-color: #2d5a8a;
+            --accent-color: #00d4ff;
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --text-light: #eaeaea;
+            --text-muted: #a0a0a0;
+            --success: #4caf50;
+            --error: #f44336;
+            --warning: #ff9800;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* ============================================
+           PANTALLA DE INICIO
+           ============================================ */
+        
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0f0f23 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        #start-screen.hidden {
+            display: none;
+        }
+        
+        .logo-container {
+            margin-bottom: 30px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .logo-container svg {
+            width: 120px;
+            height: 120px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        
+        .title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+        
+        .instructions {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 30px;
+            max-width: 400px;
+            width: 100%;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .instructions h3 {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            color: var(--accent-color);
+        }
+        
+        .instructions ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .instructions li {
+            padding: 8px 0;
+            padding-left: 28px;
+            position: relative;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .instructions li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+        }
+        
+        .start-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 16px 48px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(74, 144, 217, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(74, 144, 217, 0.6);
+        }
+        
+        .start-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* ============================================
+           PANEL DE CONTROLES
+           ============================================ */
+        
+        #controls-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(22, 33, 62, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            z-index: 1000;
+            width: calc(100% - 40px);
+            max-width: 420px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            display: none;
+        }
+        
+        #controls-panel.visible {
+            display: block;
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        .controls-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .controls-header h3 {
+            font-size: 1rem;
+            color: var(--accent-color);
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        
+        .close-btn:hover {
+            color: var(--text-light);
+        }
+        
+        .control-group {
+            margin-bottom: 16px;
+        }
+        
+        .control-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        
+        .control-group .value-display {
+            float: right;
+            color: var(--accent-color);
+            font-weight: 500;
+        }
+        
+        /* Color Buttons */
+        .color-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .color-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-btn.active {
+            border-color: white;
+            box-shadow: 0 0 15px currentColor;
+        }
+        
+        .color-btn.red { background: #ff5252; }
+        .color-btn.blue { background: #4a90d9; }
+        .color-btn.green { background: #4caf50; }
+        .color-btn.yellow { background: #ffeb3b; }
+        .color-btn.purple { background: #9c27b0; }
+        .color-btn.orange { background: #ff9800; }
+        
+        /* Shape Buttons */
+        .shape-options {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .shape-btn {
+            flex: 1;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .shape-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .shape-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        /* Scale Slider */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        
+        /* ============================================
+           MENSAJES DE ERROR
+           ============================================ */
+        
+        #error-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+        
+        #error-overlay.visible {
+            display: flex;
+        }
+        
+        .error-content {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid var(--error);
+        }
+        
+        .error-content svg {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 20px;
+            color: var(--error);
+        }
+        
+        .error-content h3 {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            color: var(--error);
+        }
+        
+        .error-content p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .retry-btn {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            font-size: 1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .retry-btn:hover {
+            opacity: 0.9;
+        }
+        
+        /* ============================================
+           INDICADOR DE ESTADO AR
+           ============================================ */
+        
+        #ar-status {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(22, 33, 62, 0.9);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            z-index: 999;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #ar-status.visible {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--warning);
+            animation: blink 1s infinite;
+        }
+        
+        .status-dot.ready {
+            background: var(--success);
+            animation: none;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* ============================================
+           SCENE CONTAINER
+           ============================================ */
+        
+        #ar-scene {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        
+        #ar-scene.visible {
+            display: block;
+        }
+        
+        /* Custom A-Frame UI */
+        .a-enter-vr {
+            display: none !important;
+        }
+        
+        /* Hide default AR.js UI */
+        .a-marker {
+            visibility: visible !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- ============================================
+         PANTALLA DE INICIO
+         ============================================ -->
+    <div id="start-screen">
+        <div class="logo-container">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="45" stroke="url(#gradient)" stroke-width="3"/>
+                <path d="M50 20 L65 40 L50 35 L35 40 Z" fill="url(#gradient)"/>
+                <path d="M50 80 L35 60 L50 65 L65 60 Z" fill="url(#gradient)"/>
+                <circle cx="50" cy="50" r="8" fill="url(#gradient)"/>
+                <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#4a90d9"/>
+                        <stop offset="100%" stop-color="#00d4ff"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        
+        <h1 class="title">WebAR Experience</h1>
+        <p class="subtitle">Realidad Aumentada en tu navegador</p>
+        
+        <div class="instructions">
+            <h3>📋 Instrucciones</h3>
+            <ul>
+                <li>Permite el acceso a tu cámara cuando se solicite</li>
+                <li>Apunta tu dispositivo hacia el marker "Hiro"</li>
+                <li>Usa los controles para personalizar el objeto</li>
+                <li>Mantén el marker visible para una mejor experiencia</li>
+            </ul>
+        </div>
+        
+        <button class="start-btn" id="start-btn">Iniciar AR</button>
+    </div>
+    
+    <!-- ============================================
+         INDICADOR DE ESTADO AR
+         ============================================ -->
+    <div id="ar-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Inicializando cámara...</span>
+    </div>
+    
+    <!-- ============================================
+         PANEL DE CONTROLES
+         ============================================ -->
+    <div id="controls-panel">
+        <div class="controls-header">
+            <h3>🎨 Controles</h3>
+            <button class="close-btn" id="close-controls">&times;</button>
+        </div>
+        
+        <!-- Color Control -->
+        <div class="control-group">
+            <label>Color <span class="value-display" id="color-value">Azul</span></label>
+            <div class="color-options">
+                <button class="color-btn red" data-color="#ff5252" data-name="Rojo"></button>
+                <button class="color-btn blue active" data-color="#4a90d9" data-name="Azul"></button>
+                <button class="color-btn green" data-color="#4caf50" data-name="Verde"></button>
+                <button class="color-btn yellow" data-color="#ffeb3b" data-name="Amarillo"></button>
+                <button class="color-btn purple" data-color="#9c27b0" data-name="Morado"></button>
+                <button class="color-btn orange" data-color="#ff9800" data-name="Naranja"></button>
+            </div>
+        </div>
+        
+        <!-- Shape Control -->
+        <div class="control-group">
+            <label>Forma <span class="value-display" id="shape-value">Cubo</span></label>
+            <div class="shape-options">
+                <button class="shape-btn active" data-shape="box">Cubo</button>
+                <button class="shape-btn" data-shape="sphere">Esfera</button>
+                <button class="shape-btn" data-shape="cylinder">Cilindro</button>
+                <button class="shape-btn" data-shape="cone">Cono</button>
+            </div>
+        </div>
+        
+        <!-- Scale Control -->
+        <div class="control-group">
+            <label>Escala <span class="value-display" id="scale-value">1.0x</span></label>
+            <div class="slider-container">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">0.5x</span>
+                <input type="range" class="slider" id="scale-slider" min="0.5" max="2" step="0.1" value="1">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">2x</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         MENSAJE DE ERROR
+         ============================================ -->
+    <div id="error-overlay">
+        <div class="error-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <h3>Error de Cámara</h3>
+            <p id="error-message">No se pudo acceder a la cámara. Por favor verifica los permisos y asegúrate de usar HTTPS.</p>
+            <button class="retry-btn" id="retry-btn">Reintentar</button>
+        </div>
+    </div>
+    
+    <!-- ============================================
+         ESCENA A-FRAME CON AR
+         ============================================ -->
+    <div id="ar-scene">
+        <a-scene
+            embedded
+            arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+            vr-mode-ui="enabled: false"
+            renderer="logarithmicDepthBuffer: true; antialias: true;"
+            gesture-detector
+        >
+            <!-- Assets -->
+            <a-assets>
+                <a-mixin id="default-material" material="color: #4a90d9; metalness: 0.5; roughness: 0.5;"></a-mixin>
+            </a-assets>
+            
+            <!-- Marker Hiro -->
+            <a-marker preset="hiro" id="marker-hiro">
+                <!-- Objeto 3D con animación de rotación -->
+                <a-entity
+                    id="ar-object"
+                    geometry="primitive: box"
+                    material="color: #4a90d9; metalness: 0.5; roughness: 0.5"
+                    scale="1 1 1"
+                    rotation="0 0 0"
+                    animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true"
+                    gesture-handler
+                ></a-entity>
+            </a-marker>
+            
+            <!-- Cámara -->
+            <a-entity camera></a-entity>
+            
+            <!-- Iluminación básica -->
+            <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
+            <a-light type="directional" color="#ffffff" intensity="0.8" position="1 1 1"></a-light>
+            <a-light type="point" color="#00d4ff" intensity="0.3" position="0 2 0"></a-light>
+        </a-scene>
+    </div>
+    
+    <script src="js/app.js"></script>
+        
+     
+         
+
+</body>
+</html>
